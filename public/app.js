@@ -522,13 +522,20 @@ window.addEventListener('DOMContentLoaded', () => {
     // Update conversation list
     const otherUser = data.sender === username ? data.receiver : data.sender;
     
-    conversations[otherUser] = {
-      username: otherUser,
-      lastMessage: data.message,
-      timestamp: data.timestamp
-    };
+    // Always add/update conversation for both sender and receiver
+    if (!conversations[otherUser]) {
+      console.log('Adding new conversation for:', otherUser);
+      conversations[otherUser] = {
+        username: otherUser,
+        lastMessage: data.message,
+        timestamp: data.timestamp
+      };
+    } else {
+      conversations[otherUser].lastMessage = data.message;
+      conversations[otherUser].timestamp = data.timestamp;
+    }
     
-    // Increment unread count if not current conversation
+    // Increment unread count if not current conversation and message is from someone else
     if (currentConversation !== otherUser && data.sender !== username) {
       unreadCounts[otherUser] = (unreadCounts[otherUser] || 0) + 1;
       saveUnreadCounts();

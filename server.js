@@ -205,6 +205,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('direct-message', async (data) => {
+    console.log('Direct message received:', data);
+    
     const dm = new DirectMessage({
       sender: data.sender,
       receiver: data.receiver,
@@ -212,24 +214,28 @@ io.on('connection', (socket) => {
     });
     await dm.save();
     
-    const receiverSocketId = Array.from(users.entries())
-      .find(([id, username]) => username === data.receiver)?.[0];
-    
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit('direct-message', {
-        sender: data.sender,
-        receiver: data.receiver,
-        message: data.message,
-        timestamp: dm.timestamp
-      });
-    }
-    
-    socket.emit('direct-message', {
+    const messageData = {
       sender: data.sender,
       receiver: data.receiver,
       message: data.message,
       timestamp: dm.timestamp
-    });
+    };
+    
+    // Find receiver's socket
+    const receiverSocketId = Array.from(users.entries())
+      .find(([id, username]) => username === data.receiver)?.[0];
+    
+    // Send to receiver if online
+    if (receiverSocketId) {
+      console.log(`Sending message to receiver ${data.receiver}`);
+      io.to(receiverSocketId).emit('direct-message', messageData);
+    } else {
+      console.log(`Receiver ${data.receiver} is offline`);
+    }
+    
+    // Always send back to sender for confirmation
+    socket.emit('direct-message', messageData);
+    console.log(`Sent confirmation to sender ${data.sender}`);
   });
 
   socket.on('nickname-change', (data) => {
