@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NodeChat - Real-time Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="auth-container">
+    <div class="auth-box">
+      <h1>NodeChat</h1>
+      <p class="subtitle">Connect and chat in real-time</p>
+      
+      <div id="login-form">
+        <h2>Welcome Back</h2>
+        <div class="input-group">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" placeholder="Enter your username" autocomplete="username">
+        </div>
+        <div class="input-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password">
+        </div>
+        <button id="login-btn">Login</button>
+        <p class="switch-auth">Don't have an account? <span id="show-signup">Create one</span></p>
+      </div>
+      
+      <div id="signup-form" style="display: none;">
+        <h2>Create Account</h2>
+        <div class="input-group">
+          <label for="signup-fullname">Full Name</label>
+          <input type="text" id="signup-fullname" placeholder="Enter your full name" autocomplete="name">
+        </div>
+        <div class="input-group">
+          <label for="signup-email">Email</label>
+          <input type="email" id="signup-email" placeholder="Enter your email" autocomplete="email">
+        </div>
+        <div class="input-group">
+          <label for="signup-username">Username</label>
+          <input type="text" id="signup-username" placeholder="Choose a username (min 3 characters)" autocomplete="username">
+        </div>
+        <div class="input-group">
+          <label for="signup-password">Password</label>
+          <input type="password" id="signup-password" placeholder="Create a password (min 6 characters)" autocomplete="new-password">
+        </div>
+        <div class="input-group">
+          <label for="signup-confirm-password">Confirm Password</label>
+          <input type="password" id="signup-confirm-password" placeholder="Confirm your password" autocomplete="new-password">
+        </div>
+        <button id="signup-btn">Sign Up</button>
+        <p class="switch-auth">Already have an account? <span id="show-login">Login here</span></p>
+      </div>
+      
+      <p id="auth-error" class="error-message"></p>
+    </div>
+  </div>
+
+  <div id="chat-container" style="display: none;">
+    <div class="sidebar">
+      <h2>Online Users</h2>
+      <ul id="user-list"></ul>
+    </div>
+    
+    <div class="chat-area">
+      <div class="chat-header">
+        <h2>NodeChat</h2>
+        <span id="current-user"></span>
+      </div>
+      
+      <div id="messages"></div>
+      
+      <div id="typing-indicator"></div>
+      
+      <div class="message-input">
+        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+        <button id="send-btn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
