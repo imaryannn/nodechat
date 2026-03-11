@@ -45,6 +45,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const nicknameInput = document.getElementById('nickname-input');
   const nicknameSave = document.getElementById('nickname-save');
   const nicknameCancel = document.getElementById('nickname-cancel');
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const mobileWelcome = document.getElementById('mobile-welcome');
+  const startChatBtn = document.getElementById('start-chat-btn');
+  const sidebar = document.querySelector('.sidebar-left');
 
   // Load saved conversations
   loadConversations();
@@ -339,6 +343,108 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Mobile menu functionality
+  function initMobileMenu() {
+    console.log('Initializing mobile menu, window width:', window.innerWidth);
+    
+    if (window.innerWidth <= 768) {
+      console.log('Mobile mode detected');
+      // Show mobile elements
+      mobileMenuBtn.style.display = 'block';
+      
+      // Show welcome screen initially if no conversation is active
+      if (!currentConversation) {
+        mobileWelcome.style.display = 'flex';
+        messagesDiv.style.display = 'none';
+        document.getElementById('typing-indicator').style.display = 'none';
+        document.querySelector('.message-input').style.display = 'none';
+      }
+      
+      // Mobile menu button click
+      mobileMenuBtn.addEventListener('click', () => {
+        console.log('Mobile menu button clicked');
+        const currentLeft = window.getComputedStyle(sidebar).left;
+        console.log('Current sidebar left position:', currentLeft);
+        
+        // Check actual position instead of just class
+        if (currentLeft === '0px') {
+          console.log('Closing sidebar');
+          sidebar.classList.remove('show');
+          sidebar.style.setProperty('left', '-100%', 'important');
+        } else {
+          console.log('Opening sidebar');
+          sidebar.classList.add('show');
+          sidebar.style.setProperty('left', '0px', 'important');
+          sidebar.style.setProperty('position', 'fixed', 'important');
+          sidebar.style.setProperty('z-index', '1000', 'important');
+        }
+      });
+      
+      // Start chat button click
+      startChatBtn.addEventListener('click', () => {
+        console.log('Start chat button clicked');
+        console.log('Sidebar before:', sidebar.className);
+        sidebar.classList.add('show');
+        // Force the style directly with !important
+        sidebar.style.setProperty('left', '0px', 'important');
+        sidebar.style.setProperty('position', 'fixed', 'important');
+        sidebar.style.setProperty('z-index', '1000', 'important');
+        console.log('Sidebar after:', sidebar.className);
+        console.log('Sidebar computed style after force:', window.getComputedStyle(sidebar).left);
+      });
+      
+      // Close sidebar when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!sidebar.contains(e.target) && 
+            !mobileMenuBtn.contains(e.target) && 
+            !e.target.closest('.mobile-menu-btn') &&
+            !startChatBtn.contains(e.target)) {
+          if (sidebar.classList.contains('show')) {
+            sidebar.classList.remove('show');
+            sidebar.style.setProperty('left', '-100%', 'important');
+          }
+        }
+      });
+      
+      // Close sidebar when selecting a conversation
+      sidebar.addEventListener('click', (e) => {
+        if (e.target.closest('.conversation-item') || e.target.closest('.user-result')) {
+          console.log('Conversation selected, closing sidebar');
+          sidebar.classList.remove('show');
+          sidebar.style.setProperty('left', '-100%', 'important');
+          
+          // Hide welcome screen and show chat
+          setTimeout(() => {
+            mobileWelcome.style.display = 'none';
+            messagesDiv.style.display = 'block';
+            document.getElementById('typing-indicator').style.display = 'block';
+            document.querySelector('.message-input').style.display = 'flex';
+          }, 300);
+        }
+      });
+    } else {
+      console.log('Desktop mode detected');
+      // Desktop mode
+      mobileMenuBtn.style.display = 'none';
+      mobileWelcome.style.display = 'none';
+      messagesDiv.style.display = 'block';
+      document.getElementById('typing-indicator').style.display = 'block';
+      document.querySelector('.message-input').style.display = 'flex';
+      sidebar.classList.remove('show');
+    }
+  }
+  
+  // Initialize mobile menu
+  initMobileMenu();
+  
+  // Reinitialize on window resize
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      sidebar.classList.remove('show');
+    }
+    initMobileMenu();
+  });
+  
   function joinChat() {
     socket.emit('join', username);
     authContainer.style.display = 'none';
@@ -346,6 +452,11 @@ window.addEventListener('DOMContentLoaded', () => {
     currentUser.textContent = `@${username}`;
     loadConversations();
     messageInput.focus();
+    
+    // Initialize mobile menu after joining
+    setTimeout(() => {
+      initMobileMenu();
+    }, 100);
   }
 
   function sendMessage() {

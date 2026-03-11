@@ -78,6 +78,7 @@
     
     <div class="chat-area">
       <div class="chat-header">
+        <button class="mobile-menu-btn" id="mobile-menu-btn" style="display: none;">☰</button>
         <div class="header-left">
           <div class="user-avatar" id="chat-avatar"></div>
           <span class="conversation-username" id="chat-username">Select a conversation</span>
@@ -95,6 +96,17 @@
       </div>
       
       <div id="chat-view">
+        <div class="mobile-welcome" id="mobile-welcome" style="display: none;">
+          <div class="logo">
+            <h1>NODE<span>CHAT</span></h1>
+          </div>
+          <p class="welcome-text">
+            Welcome to NodeChat!<br>
+            Start chatting with people in real-time.
+          </p>
+          <button class="start-chat-btn" id="start-chat-btn">Start Chatting</button>
+        </div>
+        
         <div id="messages">
           <div class="empty-state">
             <h3>Welcome to NodeChat</h3>

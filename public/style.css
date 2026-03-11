@@ -835,9 +835,34 @@ body {
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .sidebar-left {
+    width: 320px;
+  }
+  
+  .chat-area {
+    max-width: calc(100% - 320px);
+  }
+}
+
 @media (max-width: 1024px) {
   .sidebar-left {
-    width: 300px;
+    width: 280px;
+  }
+  
+  .chat-area {
+    max-width: calc(100% - 280px);
+  }
+  
+  .conversation-item {
+    padding: 12px 16px;
+    margin: 6px 12px;
+  }
+  
+  .conversation-avatar {
+    width: 45px;
+    height: 45px;
+    font-size: 16px;
   }
 }
 
@@ -845,6 +870,7 @@ body {
   .auth-box {
     padding: 30px 25px;
     max-width: 100%;
+    margin: 20px;
   }
 
   .logo h1 {
@@ -855,27 +881,105 @@ body {
     font-size: 20px;
   }
 
-  .sidebar-left {
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100vh;
-    z-index: 200;
-    transform: translateX(-100%);
-    transition: transform 0.3s;
+  #chat-container {
+    position: relative;
   }
 
-  .sidebar-left.active {
-    transform: translateX(0);
+  #chat-container .sidebar-left {
+    position: fixed !important;
+    left: -100% !important;
+    top: 0;
+    height: 100vh;
+    width: 300px !important;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    background: #111111;
+    border-right: 1px solid #333333;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #chat-container .sidebar-left.show {
+    left: 0 !important;
   }
 
   .chat-area {
-    max-width: 100%;
     width: 100%;
+    max-width: 100%;
+  }
+  
+  .mobile-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 40px 20px;
+    text-align: center;
+    background: #000000;
+  }
+  
+  .mobile-welcome .logo {
+    margin-bottom: 30px;
+  }
+  
+  .mobile-welcome .logo h1 {
+    font-size: 32px;
+    margin-bottom: 15px;
+  }
+  
+  .mobile-welcome .welcome-text {
+    color: #888;
+    font-size: 16px;
+    margin-bottom: 40px;
+    line-height: 1.6;
+  }
+  
+  .mobile-welcome .start-chat-btn {
+    background: #ffffff;
+    color: #000000;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .mobile-welcome .start-chat-btn:hover {
+    background: #f0f0f0;
+    transform: translateY(-2px);
   }
 
   .chat-header {
-    padding: 12px 15px;
+    padding: 15px 20px;
+    position: relative;
+  }
+  
+  .chat-header .mobile-menu-btn {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+    z-index: 10;
+  }
+  
+  .header-left {
+    margin-left: 45px;
+    flex: 1;
+  }
+  
+  .header-actions {
+    margin-left: auto;
   }
 
   .logo-small h2 {
@@ -887,33 +991,58 @@ body {
   }
 
   #messages {
-    padding: 20px 15px;
+    padding: 20px 15px 100px 15px;
   }
 
   .message {
-    padding: 0;
+    margin-bottom: 16px;
+  }
+  
+  .message-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
   }
 
   .message-input {
-    padding: 12px 15px;
-    gap: 10px;
+    padding: 15px 20px;
+    gap: 12px;
   }
 
   #message-input {
-    padding: 10px 16px;
+    padding: 12px 18px;
     font-size: 14px;
   }
 
   #send-btn {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     font-size: 18px;
+  }
+  
+  .toast-notification {
+    top: 15px;
+    right: 15px;
+    left: 15px;
+    max-width: none;
+    font-size: 13px;
+  }
+  
+  .menu-dropdown {
+    right: -10px;
+    min-width: 140px;
+  }
+  
+  .nickname-modal-content {
+    margin: 20px;
+    padding: 25px;
   }
 }
 
 @media (max-width: 480px) {
   .auth-box {
     padding: 25px 20px;
+    margin: 15px;
   }
 
   .logo h1 {
@@ -941,8 +1070,49 @@ body {
     font-size: 14px;
   }
 
+  .sidebar-left {
+    width: 280px;
+  }
+
   .chat-header {
-    padding: 10px 12px;
+    padding: 12px 15px;
+  }
+  
+  .chat-header .mobile-menu-btn {
+    left: 12px;
+    font-size: 18px;
+  }
+  
+  .header-left {
+    margin-left: 42px;
+  }
+  
+  .header-left .user-avatar {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+  }
+  
+  .conversation-username {
+    font-size: 14px;
+  }
+  
+  .mobile-welcome {
+    padding: 30px 15px;
+  }
+  
+  .mobile-welcome .logo h1 {
+    font-size: 28px;
+  }
+  
+  .mobile-welcome .welcome-text {
+    font-size: 14px;
+    margin-bottom: 30px;
+  }
+  
+  .mobile-welcome .start-chat-btn {
+    padding: 14px 28px;
+    font-size: 14px;
   }
 
   .logo-small h2 {
@@ -950,44 +1120,125 @@ body {
   }
 
   #messages {
-    padding: 15px 12px;
+    padding: 15px 12px 90px 12px;
   }
 
+  .message {
+    margin-bottom: 14px;
+    gap: 10px;
+  }
+  
   .message-avatar {
     width: 28px;
     height: 28px;
     font-size: 12px;
   }
-
-  .message .username {
-    font-size: 13px;
+  
+  .message-content {
+    max-width: calc(100% - 38px);
   }
 
+  .message .username-small {
+    font-size: 9px;
+  }
+  
   .message .message-text {
-    font-size: 13px;
-  }
-
-  .message .timestamp {
-    font-size: 10px;
+    font-size: 14px;
+    padding: 8px 12px;
   }
 
   .message-input {
-    padding: 10px 12px;
+    padding: 12px 15px;
+    gap: 10px;
   }
 
   #message-input {
-    padding: 10px 14px;
+    padding: 10px 16px;
     font-size: 13px;
   }
 
   #send-btn {
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     font-size: 16px;
   }
 
   #logout-btn {
     padding: 6px 10px;
     font-size: 12px;
+  }
+  
+  .menu-toggle {
+    width: 35px;
+    height: 32px;
+    font-size: 14px;
+  }
+  
+  .toast-notification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    padding: 12px 16px;
+    font-size: 12px;
+  }
+  
+  .nickname-modal-content {
+    margin: 15px;
+    padding: 20px;
+  }
+  
+  .nickname-modal h3 {
+    font-size: 16px;
+  }
+  
+  .nickname-modal input {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .auth-box {
+    margin: 10px;
+    padding: 20px 15px;
+  }
+  
+  .logo h1 {
+    font-size: 24px;
+  }
+  
+  .sidebar-left {
+    width: 260px;
+  }
+  
+  .chat-header {
+    padding: 10px 12px;
+  }
+  
+  .header-left {
+    margin-left: 30px;
+  }
+  
+  .conversation-username {
+    font-size: 13px;
+  }
+  
+  #messages {
+    padding: 12px 10px 85px 10px;
+  }
+  
+  .message-input {
+    padding: 10px 12px;
+  }
+  
+  #message-input {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+  
+  #send-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
   }
 }
