@@ -5,6 +5,7 @@ let typingTimer;
 let currentConversation = null;
 let conversations = JSON.parse(localStorage.getItem('nodechat_conversations') || '{}');
 let unreadCounts = JSON.parse(localStorage.getItem('nodechat_unread') || '{}');
+let nicknames = JSON.parse(localStorage.getItem('nodechat_nicknames') || '{}');
 
 // Check localStorage first
 const savedUser = localStorage.getItem('nodechat_user');
@@ -36,6 +37,14 @@ window.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('search-input');
   const searchResults = document.getElementById('search-results');
   const conversationsList = document.getElementById('conversations-list');
+  const chatMenu = document.getElementById('chat-menu');
+  const menuToggle = document.getElementById('menu-toggle');
+  const menuDropdown = document.getElementById('menu-dropdown');
+  const setNicknameItem = document.getElementById('set-nickname');
+  const nicknameModal = document.getElementById('nickname-modal');
+  const nicknameInput = document.getElementById('nickname-input');
+  const nicknameSave = document.getElementById('nickname-save');
+  const nicknameCancel = document.getElementById('nickname-cancel');
 
   // Load saved conversations
   loadConversations();
@@ -83,6 +92,56 @@ window.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('signup-confirm-password').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleSignup();
+  });
+
+  // Menu functionality
+  menuToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menuDropdown.classList.toggle('show');
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', () => {
+    menuDropdown.classList.remove('show');
+  });
+
+  // Nickname functionality
+  setNicknameItem.addEventListener('click', () => {
+    if (currentConversation) {
+      nicknameInput.value = nicknames[currentConversation] || '';
+      nicknameModal.style.display = 'flex';
+      nicknameInput.focus();
+      menuDropdown.classList.remove('show');
+    }
+  });
+
+  nicknameSave.addEventListener('click', () => {
+    if (currentConversation) {
+      setNickname(currentConversation, nicknameInput.value);
+      nicknameModal.style.display = 'none';
+    }
+  });
+
+  nicknameCancel.addEventListener('click', () => {
+    nicknameModal.style.display = 'none';
+  });
+
+  nicknameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      if (currentConversation) {
+        setNickname(currentConversation, nicknameInput.value);
+        nicknameModal.style.display = 'none';
+      }
+    } else if (e.key === 'Escape') {
+      nicknameModal.style.display = 'none';
+    }
+  });
+
+  // Close modal when clicking outside
+  nicknameModal.addEventListener('click', (e) => {
+    if (e.target === nicknameModal) {
+      nicknameModal.style.display = 'none';
+    }
   });
 
   sendBtn.addEventListener('click', sendMessage);
@@ -161,8 +220,12 @@ window.addEventListener('DOMContentLoaded', () => {
     
     loadConversations();
     
-    document.getElementById('chat-username').textContent = targetUser;
+    const displayName = nicknames[targetUser] || targetUser;
+    document.getElementById('chat-username').textContent = displayName;
     document.getElementById('chat-avatar').textContent = targetUser.charAt(0).toUpperCase();
+    
+    // Show chat menu
+    document.getElementById('chat-menu').style.display = 'block';
     
     messagesDiv.innerHTML = '';
     
@@ -299,6 +362,48 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   socket.on('direct-message', (data) => {
+    // Check if this is a nickname change notification
+    if (data.message && data.message.startsWith('__NICKNAME_CHANGE__:')) {
+      const parts = data.message.split(':');
+      if (parts.length === 3) {
+        const oldNickname = parts[1];
+        const newNickname = parts[2];
+        
+        console.log('Received nickname change notification:', { oldNickname, newNickname, from: data.sender });
+        
+        // Show toast notification to the receiver
+        if (data.receiver === username) {
+          showToastNotification(`${data.sender} changed your nickname to "${newNickname}"`);
+          
+          // Add system message if currently in conversation with the changer
+          if (currentConversation === data.sender) {
+            addSystemMessage(`${data.sender} changed your nickname to "${newNickname}"`);
+          } else {
+            // Update conversation list
+            if (!conversations[data.sender]) {
+              conversations[data.sender] = {
+                username: data.sender,
+                lastMessage: `Changed your nickname to "${newNickname}"`,
+                timestamp: data.timestamp || Date.now()
+              };
+            } else {
+              conversations[data.sender].lastMessage = `Changed your nickname to "${newNickname}"`;
+              conversations[data.sender].timestamp = data.timestamp || Date.now();
+            }
+            
+            // Increment unread count
+            unreadCounts[data.sender] = (unreadCounts[data.sender] || 0) + 1;
+            saveUnreadCounts();
+            saveConversations();
+            loadConversations();
+          }
+        }
+        
+        return; // Don't process this as a regular message
+      }
+    }
+    
+    // Regular message processing
     if (currentConversation === data.sender || currentConversation === data.receiver) {
       addDirectMessage(data.sender, data.message, data.timestamp);
     }
@@ -320,6 +425,47 @@ window.addEventListener('DOMContentLoaded', () => {
     
     saveConversations();
     loadConversations();
+  });
+
+  socket.on('nickname-changed', (data) => {
+    console.log('Client received nickname-changed event:', data);
+    
+    if (data.changedBy === username) {
+      // Message for the person who changed the nickname
+      if (currentConversation === data.targetUser) {
+        // Don't add system message here since we already added it immediately
+        console.log('Sender confirmation received');
+      }
+    } else if (data.targetUser === username) {
+      // Message for the person whose nickname was changed
+      console.log('My nickname was changed by:', data.changedBy);
+      
+      // Always show toast notification
+      showToastNotification(`${data.changedBy} changed your nickname to "${data.newNickname}"`);
+      
+      // Add system message if currently in conversation with the changer
+      if (currentConversation === data.changedBy) {
+        addSystemMessage(`${data.changedBy} changed your nickname to "${data.newNickname}"`);
+      } else {
+        // Update conversation list
+        if (!conversations[data.changedBy]) {
+          conversations[data.changedBy] = {
+            username: data.changedBy,
+            lastMessage: `Changed your nickname to "${data.newNickname}"`,
+            timestamp: Date.now()
+          };
+        } else {
+          conversations[data.changedBy].lastMessage = `Changed your nickname to "${data.newNickname}"`;
+          conversations[data.changedBy].timestamp = Date.now();
+        }
+        
+        // Increment unread count
+        unreadCounts[data.changedBy] = (unreadCounts[data.changedBy] || 0) + 1;
+        saveUnreadCounts();
+        saveConversations();
+        loadConversations();
+      }
+    }
   });
 
   function addDirectMessage(sender, message, timestamp) {
@@ -375,10 +521,12 @@ window.addEventListener('DOMContentLoaded', () => {
         const unreadBadge = unreadCount > 0 ? 
           `<div class="unread-badge">${unreadCount}</div>` : '';
         
+        const displayName = nicknames[conv.username] || conv.username;
+        
         convDiv.innerHTML = `
           <div class="conversation-avatar">${conv.username.charAt(0).toUpperCase()}</div>
           <div class="conversation-info">
-            <span class="conversation-username">${conv.username}</span>
+            <span class="conversation-username">${displayName}</span>
             <span class="conversation-preview">${conv.lastMessage || 'Start a conversation'}</span>
           </div>
           ${unreadBadge}
@@ -393,11 +541,104 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
   
+  function showToastNotification(message) {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    
+    // Add to body
+    document.body.appendChild(toast);
+    
+    // Show toast
+    setTimeout(() => {
+      toast.classList.add('show');
+    }, 100);
+    
+    // Hide and remove toast after 4 seconds
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => {
+        if (document.body.contains(toast)) {
+          document.body.removeChild(toast);
+        }
+      }, 300);
+    }, 4000);
+  }
+  
+  function addSystemMessage(message) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'system-message';
+    messageDiv.textContent = message;
+    
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+  
   function saveConversations() {
     localStorage.setItem('nodechat_conversations', JSON.stringify(conversations));
   }
   
   function saveUnreadCounts() {
     localStorage.setItem('nodechat_unread', JSON.stringify(unreadCounts));
+  }
+  
+  function saveNicknames() {
+    localStorage.setItem('nodechat_nicknames', JSON.stringify(nicknames));
+  }
+  
+  // Test connectivity - add this temporarily
+  window.testNickname = function() {
+    if (currentConversation) {
+      console.log('Testing nickname change for:', currentConversation);
+      socket.emit('nickname-change', {
+        changedBy: username,
+        targetUser: currentConversation,
+        oldNickname: 'test-old',
+        newNickname: 'test-new'
+      });
+    } else {
+      console.log('No current conversation to test with');
+    }
+  };
+  
+  function setNickname(targetUsername, nickname) {
+    const oldNickname = nicknames[targetUsername] || targetUsername;
+    const newNickname = nickname.trim() || targetUsername;
+    
+    console.log('Setting nickname:', { targetUsername, oldNickname, newNickname });
+    console.log('Socket connected:', socket.connected);
+    
+    if (nickname.trim()) {
+      nicknames[targetUsername] = nickname.trim();
+    } else {
+      delete nicknames[targetUsername];
+    }
+    saveNicknames();
+    loadConversations();
+    
+    // Update chat header if this is current conversation
+    if (currentConversation === targetUsername) {
+      const displayName = nicknames[targetUsername] || targetUsername;
+      document.getElementById('chat-username').textContent = displayName;
+    }
+    
+    // Send nickname change notification using direct message system
+    if (oldNickname !== newNickname) {
+      console.log('Sending nickname change notification');
+      
+      // Send a special direct message to notify about nickname change
+      socket.emit('direct-message', {
+        sender: username,
+        receiver: targetUsername,
+        message: `__NICKNAME_CHANGE__:${oldNickname}:${newNickname}`,
+        isSystem: true
+      });
+      
+      // Add system message for the sender immediately
+      if (currentConversation === targetUsername) {
+        addSystemMessage(`You changed ${oldNickname}'s nickname to "${newNickname}"`);
+      }
+    }
   }
 });

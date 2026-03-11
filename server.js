@@ -131,7 +131,10 @@ io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
   socket.on('join', async (username) => {
+    console.log(`User ${username} joining with socket ${socket.id}`);
     users.set(socket.id, username);
+    console.log('Updated users map:', Array.from(users.entries()));
+    
     socket.broadcast.emit('user-joined', username);
     
     const messages = await Message.find().sort({ timestamp: 1 }).limit(50);
@@ -190,10 +193,36 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('nickname-change', (data) => {
+    console.log('Server received nickname-change:', data);
+    console.log('All connected users:', Array.from(users.entries()));
+    
+    // Find the target user's socket
+    const targetSocketEntry = Array.from(users.entries())
+      .find(([socketId, username]) => username === data.targetUser);
+    
+    if (targetSocketEntry) {
+      const [targetSocketId, targetUsername] = targetSocketEntry;
+      console.log(`Found target user ${targetUsername} with socket ${targetSocketId}`);
+      
+      // Send to target user with different event name
+      io.to(targetSocketId).emit('nickname-changed', data);
+      console.log(`Sent nickname-changed event to ${targetUsername}`);
+    } else {
+      console.log(`Target user ${data.targetUser} not found in connected users`);
+    }
+    
+    // Send back to sender for confirmation
+    socket.emit('nickname-changed', data);
+    console.log(`Sent confirmation to sender ${data.changedBy}`);
+  });
+
   socket.on('disconnect', () => {
     const username = users.get(socket.id);
+    console.log(`User ${username} disconnecting with socket ${socket.id}`);
     if (username) {
       users.delete(socket.id);
+      console.log('Updated users map after disconnect:', Array.from(users.entries()));
       io.emit('user-left', username);
       io.emit('user-list', Array.from(users.values()));
     }

@@ -83,6 +83,12 @@
           <span class="conversation-username" id="chat-username">Select a conversation</span>
         </div>
         <div class="header-actions">
+          <div class="chat-menu" id="chat-menu" style="display: none;">
+            <button class="menu-toggle" id="menu-toggle">⋯</button>
+            <div class="menu-dropdown" id="menu-dropdown">
+              <div class="menu-item" id="set-nickname">Set Nickname</div>
+            </div>
+          </div>
           <span id="current-user"></span>
           <button id="logout-btn" title="Logout" onclick="localStorage.removeItem('nodechat_user'); location.reload();">Logout</button>
         </div>
@@ -102,6 +108,18 @@
           <input type="text" id="message-input" placeholder="Select a user to start messaging..." autocomplete="off" disabled>
           <button id="send-btn" disabled>➤</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nickname Modal -->
+  <div id="nickname-modal" class="nickname-modal">
+    <div class="nickname-modal-content">
+      <h3>Set Nickname</h3>
+      <input type="text" id="nickname-input" placeholder="Enter nickname..." maxlength="20">
+      <div class="nickname-modal-buttons">
+        <button class="nickname-save" id="nickname-save">Save</button>
+        <button class="nickname-cancel" id="nickname-cancel">Cancel</button>
       </div>
     </div>
   </div>
