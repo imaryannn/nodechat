@@ -324,18 +324,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
   function addDirectMessage(sender, message, timestamp) {
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'message';
+    const isOwnMessage = sender === username;
+    messageDiv.className = `message ${isOwnMessage ? 'own' : 'other'}`;
     
-    const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const avatar = sender.charAt(0).toUpperCase();
     
     messageDiv.innerHTML = `
-      <div class="message-header">
-        <div class="message-avatar">${avatar}</div>
-        <span class="username">${sender}</span>
-        <span class="timestamp">${time}</span>
+      <div class="message-avatar">${avatar}</div>
+      <div class="message-content">
+        <div class="message-text">${message}</div>
+        <div class="username-small">${sender}</div>
       </div>
-      <div class="message-text">${message}</div>
     `;
     
     messagesDiv.appendChild(messageDiv);
