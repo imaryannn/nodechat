@@ -4,12 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NodeChat - Real-time Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="auth-container">
     <div class="auth-box">
-      <h1>NodeChat</h1>
+      <div class="logo">
+        <h1>NODE<span>CHAT</span></h1>
+      </div>
       <p class="subtitle">Connect and chat in real-time</p>
       
       <div id="login-form">
@@ -57,24 +62,46 @@
   </div>
 
   <div id="chat-container" style="display: none;">
-    <div class="sidebar">
-      <h2>Online Users</h2>
-      <ul id="user-list"></ul>
+    <div class="sidebar-left">
+      <div class="sidebar-header">
+        <div class="logo-small">
+          <h2>NODE<span>CHAT</span></h2>
+        </div>
+        <div class="search-container-sidebar">
+          <input type="text" id="search-input" placeholder="Search users..." autocomplete="off">
+        </div>
+      </div>
+      <div class="conversations-list" id="conversations-list">
+        <div id="search-results"></div>
+      </div>
     </div>
     
     <div class="chat-area">
       <div class="chat-header">
-        <h2>NodeChat</h2>
-        <span id="current-user"></span>
+        <div class="header-left">
+          <div class="user-avatar" id="chat-avatar"></div>
+          <span class="conversation-username" id="chat-username">Select a conversation</span>
+        </div>
+        <div class="header-actions">
+          <span id="current-user"></span>
+          <button id="logout-btn" title="Logout" onclick="localStorage.removeItem('nodechat_user'); location.reload();">Logout</button>
+        </div>
       </div>
       
-      <div id="messages"></div>
-      
-      <div id="typing-indicator"></div>
-      
-      <div class="message-input">
-        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-        <button id="send-btn">Send</button>
+      <div id="chat-view">
+        <div id="messages">
+          <div class="empty-state">
+            <h3>Welcome to NodeChat</h3>
+            <p>Search for a user to start a conversation</p>
+          </div>
+        </div>
+        
+        <div id="typing-indicator"></div>
+        
+        <div class="message-input">
+          <input type="text" id="message-input" placeholder="Select a user to start messaging..." autocomplete="off" disabled>
+          <button id="send-btn" disabled>➤</button>
+        </div>
       </div>
     </div>
   </div>

@@ -2,6 +2,20 @@ const socket = io();
 
 let username = '';
 let typingTimer;
+let currentConversation = null;
+let conversations = JSON.parse(localStorage.getItem('nodechat_conversations') || '{}');
+let unreadCounts = JSON.parse(localStorage.getItem('nodechat_unread') || '{}');
+
+// Check localStorage first
+const savedUser = localStorage.getItem('nodechat_user');
+
+if (savedUser) {
+  username = savedUser;
+  document.getElementById('auth-container').style.display = 'none';
+  document.getElementById('chat-container').style.display = 'flex';
+  document.getElementById('current-user').textContent = `@${username}`;
+  socket.emit('join', username);
+}
 
 // Wait for DOM to load
 window.addEventListener('DOMContentLoaded', () => {
@@ -17,13 +31,17 @@ window.addEventListener('DOMContentLoaded', () => {
   const messageInput = document.getElementById('message-input');
   const sendBtn = document.getElementById('send-btn');
   const messagesDiv = document.getElementById('messages');
-  const userList = document.getElementById('user-list');
   const currentUser = document.getElementById('current-user');
   const typingIndicator = document.getElementById('typing-indicator');
+  const searchInput = document.getElementById('search-input');
+  const searchResults = document.getElementById('search-results');
+  const conversationsList = document.getElementById('conversations-list');
+
+  // Load saved conversations
+  loadConversations();
 
   showSignup.addEventListener('click', (e) => {
     e.preventDefault();
-    console.log('Signup clicked');
     loginForm.style.display = 'none';
     signupForm.style.display = 'block';
     authError.textContent = '';
@@ -31,7 +49,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
   showLogin.addEventListener('click', (e) => {
     e.preventDefault();
-    console.log('Login clicked');
     signupForm.style.display = 'none';
     loginForm.style.display = 'block';
     authError.textContent = '';
@@ -81,6 +98,91 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 1000);
   });
 
+  searchInput.addEventListener('input', async () => {
+    const query = searchInput.value.trim();
+    
+    if (query.length < 2) {
+      searchResults.innerHTML = '';
+      loadConversations();
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/users/search?query=${encodeURIComponent(query)}`);
+      const users = await response.json();
+      
+      searchResults.innerHTML = '<h4 style="color: #888; padding: 10px 15px; font-size: 12px; text-transform: uppercase;">Search Results</h4>';
+      
+      users.forEach(user => {
+        if (user.username === username) return;
+        
+        const userDiv = document.createElement('div');
+        userDiv.className = 'user-result';
+        userDiv.innerHTML = `
+          <div class="user-result-avatar">${user.username.charAt(0).toUpperCase()}</div>
+          <div class="user-result-info">
+            <span class="user-result-username">${user.username}</span>
+            <span class="user-result-fullname">${user.fullName || ''}</span>
+          </div>
+        `;
+        
+        userDiv.addEventListener('click', () => {
+          openConversation(user.username);
+        });
+        
+        searchResults.appendChild(userDiv);
+      });
+      
+      if (users.length === 0) {
+        searchResults.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">No users found</p>';
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    }
+  });
+
+  async function openConversation(targetUser) {
+    currentConversation = targetUser;
+    searchInput.value = '';
+    
+    // Add to conversations if not exists
+    if (!conversations[targetUser]) {
+      conversations[targetUser] = {
+        username: targetUser,
+        lastMessage: '',
+        timestamp: Date.now()
+      };
+      saveConversations();
+    }
+    
+    // Clear unread count
+    unreadCounts[targetUser] = 0;
+    saveUnreadCounts();
+    
+    loadConversations();
+    
+    document.getElementById('chat-username').textContent = targetUser;
+    document.getElementById('chat-avatar').textContent = targetUser.charAt(0).toUpperCase();
+    
+    messagesDiv.innerHTML = '';
+    
+    try {
+      const response = await fetch(`/api/messages/${username}/${targetUser}`);
+      const messages = await response.json();
+      
+      messages.forEach(msg => {
+        addDirectMessage(msg.sender, msg.message, msg.timestamp);
+      });
+    } catch (error) {
+      console.error('Load messages error:', error);
+    }
+    
+    messageInput.placeholder = `Message ${targetUser}...`;
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    messageInput.focus();
+  }
+
   async function handleLogin() {
     const usernameInput = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value;
@@ -94,13 +196,15 @@ window.addEventListener('DOMContentLoaded', () => {
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: usernameInput, password })
+        body: JSON.stringify({ username: usernameInput, password }),
+        credentials: 'include'
       });
       
       const data = await response.json();
       
       if (response.ok) {
         username = usernameInput;
+        localStorage.setItem('nodechat_user', username);
         joinChat();
       } else {
         authError.textContent = data.error;
@@ -149,7 +253,8 @@ window.addEventListener('DOMContentLoaded', () => {
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName, email, username: usernameInput, password })
+        body: JSON.stringify({ fullName, email, username: usernameInput, password }),
+        credentials: 'include'
       });
       
       const data = await response.json();
@@ -159,6 +264,7 @@ window.addEventListener('DOMContentLoaded', () => {
         authError.textContent = 'Account created! Logging in...';
         setTimeout(() => {
           username = usernameInput;
+          localStorage.setItem('nodechat_user', username);
           joinChat();
         }, 1000);
       } else {
@@ -174,74 +280,125 @@ window.addEventListener('DOMContentLoaded', () => {
     socket.emit('join', username);
     authContainer.style.display = 'none';
     chatContainer.style.display = 'flex';
-    currentUser.textContent = `Logged in as: ${username}`;
+    currentUser.textContent = `@${username}`;
+    loadConversations();
     messageInput.focus();
   }
 
   function sendMessage() {
     const message = messageInput.value.trim();
-    if (message) {
-      socket.emit('chat-message', { username, message });
+    if (message && currentConversation) {
+      socket.emit('direct-message', { 
+        sender: username, 
+        receiver: currentConversation, 
+        message 
+      });
       messageInput.value = '';
       socket.emit('stop-typing');
     }
   }
 
-  socket.on('load-messages', (messages) => {
-    messages.forEach(msg => {
-      addMessage(msg.username, msg.message, msg.timestamp);
-    });
+  socket.on('direct-message', (data) => {
+    if (currentConversation === data.sender || currentConversation === data.receiver) {
+      addDirectMessage(data.sender, data.message, data.timestamp);
+    }
+    
+    // Update conversation list
+    const otherUser = data.sender === username ? data.receiver : data.sender;
+    
+    conversations[otherUser] = {
+      username: otherUser,
+      lastMessage: data.message,
+      timestamp: data.timestamp
+    };
+    
+    // Increment unread count if not current conversation
+    if (currentConversation !== otherUser && data.sender !== username) {
+      unreadCounts[otherUser] = (unreadCounts[otherUser] || 0) + 1;
+      saveUnreadCounts();
+    }
+    
+    saveConversations();
+    loadConversations();
   });
 
-  socket.on('chat-message', (data) => {
-    addMessage(data.username, data.message, data.timestamp);
-  });
-
-  socket.on('user-joined', (username) => {
-    addSystemMessage(`${username} joined the chat`);
-  });
-
-  socket.on('user-left', (username) => {
-    addSystemMessage(`${username} left the chat`);
-  });
-
-  socket.on('user-list', (users) => {
-    userList.innerHTML = '';
-    users.forEach(user => {
-      const li = document.createElement('li');
-      li.textContent = user;
-      userList.appendChild(li);
-    });
-  });
-
-  socket.on('typing', (username) => {
-    typingIndicator.textContent = `${username} is typing...`;
-  });
-
-  socket.on('stop-typing', () => {
-    typingIndicator.textContent = '';
-  });
-
-  function addMessage(username, message, timestamp) {
+  function addDirectMessage(sender, message, timestamp) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message';
     
-    const time = new Date(timestamp).toLocaleTimeString();
+    const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const avatar = sender.charAt(0).toUpperCase();
+    
     messageDiv.innerHTML = `
-      <span class="username">${username}</span>
-      <span class="message-text">${message}</span>
-      <span class="timestamp">${time}</span>
+      <div class="message-header">
+        <div class="message-avatar">${avatar}</div>
+        <span class="username">${sender}</span>
+        <span class="timestamp">${time}</span>
+      </div>
+      <div class="message-text">${message}</div>
     `;
     
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    // Update conversation with last message
+    if (currentConversation) {
+      conversations[currentConversation] = {
+        username: currentConversation,
+        lastMessage: message,
+        timestamp: timestamp
+      };
+      saveConversations();
+      loadConversations();
+    }
   }
-
-  function addSystemMessage(message) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'system-message';
-    messageDiv.textContent = message;
-    messagesDiv.appendChild(messageDiv);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  
+  function loadConversations() {
+    const conversationsContainer = searchResults.innerHTML.includes('Search Results') ? 
+      document.createElement('div') : searchResults;
+    
+    if (!searchResults.innerHTML.includes('Search Results')) {
+      conversationsContainer.innerHTML = '';
+      
+      if (Object.keys(conversations).length > 0) {
+        conversationsContainer.innerHTML = '<h4 style="color: #888; padding: 10px 15px; font-size: 12px; text-transform: uppercase;">Recent Chats</h4>';
+      }
+      
+      // Sort conversations by timestamp
+      const sortedConversations = Object.values(conversations)
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      sortedConversations.forEach(conv => {
+        const convDiv = document.createElement('div');
+        convDiv.className = `conversation-item ${currentConversation === conv.username ? 'active' : ''}`;
+        
+        const unreadCount = unreadCounts[conv.username] || 0;
+        const unreadBadge = unreadCount > 0 ? 
+          `<div class="unread-badge">${unreadCount}</div>` : '';
+        
+        convDiv.innerHTML = `
+          <div class="conversation-avatar">${conv.username.charAt(0).toUpperCase()}</div>
+          <div class="conversation-info">
+            <span class="conversation-username">${conv.username}</span>
+            <span class="conversation-preview">${conv.lastMessage || 'Start a conversation'}</span>
+          </div>
+          ${unreadBadge}
+        `;
+        
+        convDiv.addEventListener('click', () => {
+          openConversation(conv.username);
+        });
+        
+        conversationsContainer.appendChild(convDiv);
+      });
+    }
+  }
+  
+  function saveConversations() {
+    localStorage.setItem('nodechat_conversations', JSON.stringify(conversations));
+  }
+  
+  function saveUnreadCounts() {
+    localStorage.setItem('nodechat_unread', JSON.stringify(unreadCounts));
   }
 });
