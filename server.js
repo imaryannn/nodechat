@@ -8,6 +8,17 @@ const Message = require('./models/Message');
 const User = require('./models/User');
 const DirectMessage = require('./models/DirectMessage');
 
+// Add error handling for uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+  process.exit(1);
+});
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -17,9 +28,36 @@ const io = socketIo(server, {
   }
 });
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+console.log('🚀 Starting NodeChat server...');
+console.log('📊 Environment check:');
+console.log('- NODE_ENV:', process.env.NODE_ENV || 'not set');
+console.log('- PORT:', process.env.PORT || 'not set');
+console.log('- MONGODB_URI exists:', !!process.env.MONGODB_URI);
+
+if (!process.env.MONGODB_URI) {
+  console.error('❌ MONGODB_URI environment variable is not set!');
+  process.exit(1);
+}
+
+console.log('🔌 Attempting MongoDB connection...');
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 10000, // 10 second timeout
+  socketTimeoutMS: 45000, // 45 second socket timeout
+})
+  .then(() => {
+    console.log('✅ MongoDB connected successfully!');
+    console.log('📁 Database name:', mongoose.connection.name);
+    console.log('🔗 Connection state:', mongoose.connection.readyState);
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection failed!');
+    console.error('Error message:', err.message);
+    console.error('Error code:', err.code);
+    console.error('Full error:', err);
+    process.exit(1);
+  });
 
 app.use(express.static('public'));
 app.use(express.json());
@@ -30,9 +68,10 @@ app.use(session({
   cookie: { 
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
     sameSite: 'lax'
-  }
+  },
+  name: 'nodechat.sid' // Custom session name
 }));
 
 const users = new Map();
@@ -231,6 +270,10 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`MongoDB URI configured: ${process.env.MONGODB_URI ? 'Yes' : 'No'}`);
+}).on('error', (err) => {
+  console.error('Server failed to start:', err);
 });
