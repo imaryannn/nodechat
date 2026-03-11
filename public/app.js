@@ -473,6 +473,11 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   socket.on('direct-message', (data) => {
+    console.log('Received direct message:', data);
+    console.log('Current user:', username);
+    console.log('Message sender:', data.sender);
+    console.log('Message receiver:', data.receiver);
+    
     // Check if this is a nickname change notification
     if (data.message && data.message.startsWith('__NICKNAME_CHANGE__:')) {
       const parts = data.message.split(':');
@@ -514,35 +519,49 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // Regular message processing
+    // Regular message processing - show message if in current conversation
     if (currentConversation === data.sender || currentConversation === data.receiver) {
       addDirectMessage(data.sender, data.message, data.timestamp);
     }
     
-    // Update conversation list
-    const otherUser = data.sender === username ? data.receiver : data.sender;
+    // Determine who the "other user" is from current user's perspective
+    let otherUser;
+    if (data.sender === username) {
+      // I sent this message, other user is the receiver
+      otherUser = data.receiver;
+      console.log('I sent message to:', otherUser);
+    } else {
+      // Someone sent me a message, other user is the sender
+      otherUser = data.sender;
+      console.log('I received message from:', otherUser);
+    }
     
-    // Always add/update conversation for both sender and receiver
+    // Always create/update conversation for the other user
     if (!conversations[otherUser]) {
-      console.log('Adding new conversation for:', otherUser);
+      console.log('Creating NEW conversation for:', otherUser);
       conversations[otherUser] = {
         username: otherUser,
         lastMessage: data.message,
         timestamp: data.timestamp
       };
     } else {
+      console.log('Updating EXISTING conversation for:', otherUser);
       conversations[otherUser].lastMessage = data.message;
       conversations[otherUser].timestamp = data.timestamp;
     }
     
-    // Increment unread count if not current conversation and message is from someone else
-    if (currentConversation !== otherUser && data.sender !== username) {
+    // Only increment unread count if:
+    // 1. This message is not from me (data.sender !== username)
+    // 2. I'm not currently in conversation with this person
+    if (data.sender !== username && currentConversation !== otherUser) {
+      console.log('Incrementing unread count for:', otherUser);
       unreadCounts[otherUser] = (unreadCounts[otherUser] || 0) + 1;
       saveUnreadCounts();
     }
     
     saveConversations();
     loadConversations();
+    console.log('Updated conversations:', Object.keys(conversations));
   });
 
   socket.on('nickname-changed', (data) => {
