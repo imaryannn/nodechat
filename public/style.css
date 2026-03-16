@@ -21,48 +21,21 @@ body {
   margin-bottom: 15px;
   text-transform: uppercase;
   position: relative;
-  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 50%, #ffffff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
   animation: logoGlow 3s ease-in-out infinite alternate;
 }
 
 @keyframes logoGlow {
   from {
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.1);
+    opacity: 0.9;
   }
   to {
-    text-shadow: 0 0 30px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 255, 255, 0.2);
+    opacity: 1;
   }
-}
-
-.logo h1::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  border-radius: 8px;
-  z-index: -1;
-  animation: borderGlow 4s linear infinite;
-}
-
-@keyframes borderGlow {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 .logo h1 span {
-  color: #888;
+  color: #666;
   font-weight: 700;
-  background: linear-gradient(135deg, #888 0%, #666 50%, #888 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   position: relative;
 }
 
@@ -90,20 +63,11 @@ body {
   color: #ffffff;
   text-transform: uppercase;
   position: relative;
-  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 50%, #ffffff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
 }
 
 .logo-small h2 span {
   color: #666;
   font-weight: 700;
-  background: linear-gradient(135deg, #888 0%, #666 50%, #888 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   position: relative;
 }
 
@@ -1003,11 +967,7 @@ body {
   .mobile-welcome .logo h1 {
     font-size: 36px;
     margin-bottom: 20px;
-    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 50%, #ffffff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    color: #ffffff;
     animation: logoGlow 3s ease-in-out infinite alternate;
   }
   
@@ -1131,11 +1091,7 @@ body {
   .logo h1 {
     font-size: 32px;
     letter-spacing: 2px;
-    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 50%, #ffffff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    color: #ffffff;
     animation: logoGlow 3s ease-in-out infinite alternate;
   }
 
@@ -1192,11 +1148,7 @@ body {
   
   .mobile-welcome .logo h1 {
     font-size: 32px;
-    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 50%, #ffffff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    color: #ffffff;
     animation: logoGlow 3s ease-in-out infinite alternate;
   }
   
